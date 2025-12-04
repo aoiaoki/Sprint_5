@@ -1,45 +1,30 @@
 import pytest
-from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+
 from locators.main_page import MainPageLocators
-from locators.login_page import LoginPageLocators
 from locators.profile_page import ProfilePageLocators
-
-BASE_URL = "https://stellarburgers.education-services.ru/"
-
-
-def login(driver, email, password):
-    driver.find_element(*LoginPageLocators.EMAIL_INPUT).send_keys(email)
-    driver.find_element(*LoginPageLocators.PASSWORD_INPUT).send_keys(password)
-    driver.find_element(*LoginPageLocators.SUBMIT_BUTTON).click()
-
-    WebDriverWait(driver, 10).until(
-        lambda d: d.execute_script("return document.readyState") == "complete"
-    )
-
-    driver.find_element(*MainPageLocators.PERSONAL_ACCOUNT_BUTTON).click()
-
-    WebDriverWait(driver, 10).until(
-        EC.visibility_of_element_located(ProfilePageLocators.LOGOUT_BUTTON)
-    )
+from locators.login_page import LoginPageLocators
+from data.credentials import BASE_URL
 
 
-def test_profile_navigation_and_constructor(driver):
-    driver.get(BASE_URL)
+class TestProfile:
 
-    driver.find_element(*MainPageLocators.PERSONAL_ACCOUNT_BUTTON).click()
+    def test_profile_navigation_and_constructor(self, open_main_page, login_user):
+        driver = open_main_page
 
-    login(driver, "vitaliy_gulevaty_35_137@yandex.ru", "qwerty1345")
+        # Клик по "Личный кабинет" и логин через фикстуру
+        driver.find_element(*MainPageLocators.PERSONAL_ACCOUNT_BUTTON).click()
+        login_user()  # использует данные из data/credentials.py
 
-    assert WebDriverWait(driver, 10).until(
-        EC.visibility_of_element_located(ProfilePageLocators.LOGOUT_BUTTON)
-    )
+        # Убедиться что кнопка logout видна
+        assert WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located(ProfilePageLocators.LOGOUT_BUTTON)
+        )
 
-    driver.find_element(*MainPageLocators.CONSTRUCTOR_BUTTON).click()
-
-    assert WebDriverWait(driver, 10).until(
-        EC.visibility_of_element_located((By.XPATH, "//h1[text()='Соберите бургер']"))
-    )
-
-    driver.quit()
+        # Перейти в конструктор и проверить заголовок
+        driver.find_element(*MainPageLocators.CONSTRUCTOR_BUTTON).click()
+        assert WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located((By.XPATH, "//h1[text()='Соберите бургер']"))
+        )
